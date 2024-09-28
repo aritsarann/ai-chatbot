@@ -1,8 +1,7 @@
 import streamlit as st
 import google.generativeai as genai
-import requests
 
-st.title("🌿 Elysian Bookshelf - Librarian Chatbot")
+st.title("📚 Elysian Bookshelf - Librarian Chatbot")
 st.subheader("What literary wisdom do you seek today?")
 
 # Capture Gemini API Key
@@ -11,6 +10,7 @@ gemini_api_key = "AIzaSyBIcWZ1OAORd7quMfSEw8f875X-SJmamBQ"
 # Initialize the Gemini Model
 if gemini_api_key:
     try:
+        # Configure Gemini with the provided API Key
         genai.configure(api_key=gemini_api_key)
         model = genai.GenerativeModel("gemini-pro")
         st.success("Gemini API Key successfully configured.")
@@ -28,48 +28,75 @@ if "chat_history" not in st.session_state:
 for role, message in st.session_state.chat_history:
     st.chat_message(role).markdown(message)
 
-# Function to search for books
-def search_books(query):
-    url = f"https://www.googleapis.com/books/v1/volumes?q={query}"
-    response = requests.get(url)
-    
-    # Enhanced error handling
-    if response.status_code == 200:
-        books = response.json().get('items', [])
-        if not books:
-            return []  # No books found
-        return [
-            f"- **{book['volumeInfo']['title']}** by {', '.join(book['volumeInfo'].get('authors', ['Unknown Author']))}"
-            for book in books[:5]
+# Function to recommend books based on themes or genres
+def recommend_books(theme):
+    # Static book recommendations based on common themes
+    book_recommendations = {
+        "mystery": [
+            "- **The Girl with the Dragon Tattoo** by Stieg Larsson",
+            "- **Gone Girl** by Gillian Flynn",
+            "- **The Da Vinci Code** by Dan Brown",
+            "- **Big Little Lies** by Liane Moriarty",
+            "- **In the Woods** by Tana French"
+        ],
+        "fantasy": [
+            "- **The Hobbit** by J.R.R. Tolkien",
+            "- **A Game of Thrones** by George R.R. Martin",
+            "- **Mistborn** by Brandon Sanderson",
+            "- **The Name of the Wind** by Patrick Rothfuss",
+            "- **The Night Circus** by Erin Morgenstern"
+        ],
+        "science fiction": [
+            "- **Dune** by Frank Herbert",
+            "- **Neuromancer** by William Gibson",
+            "- **Ender's Game** by Orson Scott Card",
+            "- **The Left Hand of Darkness** by Ursula K. Le Guin",
+            "- **Snow Crash** by Neal Stephenson"
+        ],
+        "romance": [
+            "- **Pride and Prejudice** by Jane Austen",
+            "- **The Notebook** by Nicholas Sparks",
+            "- **Me Before You** by Jojo Moyes",
+            "- **Outlander** by Diana Gabaldon",
+            "- **The Hating Game** by Sally Thorne"
         ]
-    else:
-        st.error(f"Failed to fetch books. Status code: {response.status_code}. Response: {response.text}")
-        return []
+    }
+    
+    return book_recommendations.get(theme.lower(), [])
 
-# Capture user input and generate bot response
-if user_input := st.chat_input("What knowledge do you seek today?"):
-    user_input = user_input.strip()  # Remove whitespace
-    if not user_input:
-        st.warning("Please enter a valid question.")
-    else:
-        st.session_state.chat_history.append(("user", user_input))
-        st.chat_message("user").markdown(user_input)
+# Capture user input and generate book recommendations or a chatbot response
+if user_input := st.chat_input("Which captivating tale shall we explore? Specify your genre or theme."):
+    # Store and display user message
+    st.session_state.chat_history.append(("user", user_input))
+    st.chat_message("user").markdown(user_input)
 
-    # Use Gemini AI to generate a bot response
+    # Use the recommend_books function to suggest titles based on user input
     if model:
         try:
-            # Search for books based on user input
-            books = search_books(user_input)
-            
+            # Generate a response using Gemini AI
+            ai_response = model.generate_content(user_input)
+            ai_response_text = ai_response.text if ai_response else "Alas, the winds of fate are not in your favor today..."
+
+            # Fetch book recommendations
+            books = recommend_books(user_input)
+
             if books:
+                book_recommendations = "\n".join(books)
                 bot_response = (
-                    "Ah, dear seeker of knowledge, here are a few titles that may pique your interest:\n" +
-                    "\n".join(books) +
+                    f"dear seeker of knowledge, here are a few titles that may pique your interest:\n" +
+                    book_recommendations +
+                    "\n\nAdditionally, I have some thoughts for you:\n" +
+                    ai_response_text +
                     "\n\nChoose wisely, for every choice shapes your journey through the realms of literature..."
                 )
             else:
-                bot_response = "Alas, it seems the tomes of knowledge are elusive today. Perhaps you might explore another tale."
+                bot_response = (
+                    f"Dear seeker of knowledge, perhaps these are the treasures your weary heart has long sought.\n\n" +
+                    ai_response_text+
+                    "\n\nAs you explore these tales, remember: each narrative mirrors your fleeting pursuits. Choose wisely, for your journey in fiction shapes the essence of your existence."
+                )
 
+            # Store and display the bot response
             st.session_state.chat_history.append(("assistant", bot_response))
             st.chat_message("assistant").markdown(bot_response)
         except Exception as e:

@@ -28,17 +28,24 @@ if "chat_history" not in st.session_state:
 for role, message in st.session_state.chat_history:
     st.chat_message(role).markdown(message)
 
-# Function to search for books
+# Function to search for books with better error handling
 def search_books(query):
     url = f"https://www.googleapis.com/books/v1/volumes?q={query}"
     response = requests.get(url)
+    
     if response.status_code == 200:
         books = response.json().get('items', [])
+        
+        if not books:
+            return []  # No books found
+        
         return [
             f"- **{book['volumeInfo']['title']}** by {', '.join(book['volumeInfo'].get('authors', ['Unknown Author']))}"
             for book in books[:5]
         ]
-    return []
+    else:
+        st.error("Failed to fetch books. Please try again later.")
+        return []
 
 # Capture user input and generate bot response
 if user_input := st.chat_input("What knowledge do you seek today?"):
@@ -52,7 +59,7 @@ if user_input := st.chat_input("What knowledge do you seek today?"):
     # Use Gemini AI to generate a bot response
     if model:
         try:
-            # Search for books based on user input regardless of keywords
+            # Search for books based on user input
             books = search_books(user_input)
             
             if books:

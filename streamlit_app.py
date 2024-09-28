@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import requests
 
-st.title("🌿 Elysian Bookshelf - Librarian chatbot")
+st.title("🌿 Elysian Bookshelf - Librarian Chatbot")
 st.subheader("What literary wisdom do you seek today?")
 
 # Capture Gemini API Key
@@ -35,7 +35,7 @@ def search_books(query):
     if response.status_code == 200:
         books = response.json().get('items', [])
         return [
-            f"- {book['volumeInfo']['title']} by {', '.join(book['volumeInfo'].get('authors', []))}"
+            f"- **{book['volumeInfo']['title']}** by {', '.join(book['volumeInfo'].get('authors', ['Unknown Author']))}"
             for book in books[:5]
         ]
     return []
@@ -52,22 +52,17 @@ if user_input := st.chat_input("What knowledge do you seek today?"):
     # Use Gemini AI to generate a bot response
     if model:
         try:
-            if "book" in user_input.lower():
-                # Search for books based on user input
-                books = search_books(user_input)
-                
-                if books:
-                    bot_response = (
-                        "Ah, dear seeker of knowledge, here are a few titles that may pique your interest:\n" +
-                        "\n".join(books) +
-                        "\n\nChoose wisely, for every choice shapes your journey through the realms of literature..."
-                    )
-                else:
-                    bot_response = "Alas, it seems the tomes of knowledge are elusive today. Perhaps you might explore another tale."
+            # Search for books based on user input regardless of keywords
+            books = search_books(user_input)
+            
+            if books:
+                bot_response = (
+                    "Ah, dear seeker of knowledge, here are a few titles that may pique your interest:\n" +
+                    "\n".join(books) +
+                    "\n\nChoose wisely, for every choice shapes your journey through the realms of literature..."
+                )
             else:
-                # Generate a general response for other inquiries
-                response = model.generate_content(f"librarian's advice on: {user_input}")
-                bot_response = f"Dear seeker of knowledge, {response.text} \n\nRemember, seeker, each inquiry unveils new paths of wisdom. Choose your words with care."
+                bot_response = "Alas, it seems the tomes of knowledge are elusive today. Perhaps you might explore another tale."
 
             st.session_state.chat_history.append(("assistant", bot_response))
             st.chat_message("assistant").markdown(bot_response)

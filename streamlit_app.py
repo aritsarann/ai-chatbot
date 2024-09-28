@@ -2,7 +2,7 @@ import streamlit as st
 import google.generativeai as genai
 import requests
 
-st.title("🌿 Elysian Bookshelf - Library")
+st.title("🌿 Elysian Bookshelf - Librarian chatbot")
 st.subheader("What literary wisdom do you seek today?")
 
 # Capture Gemini API Key

@@ -1,5 +1,6 @@
 import streamlit as st
 import google.generativeai as genai
+import requests
 
 st.title("🌿 Elysian Bookshelf - Librarian Chatbot")
 st.subheader("What literary wisdom do you seek today?")
@@ -27,20 +28,51 @@ if "chat_history" not in st.session_state:
 for role, message in st.session_state.chat_history:
     st.chat_message(role).markdown(message)
 
+# Function to search for books
+def search_books(query):
+    url = f"https://www.googleapis.com/books/v1/volumes?q={query}"
+    response = requests.get(url)
+    
+    # Enhanced error handling
+    if response.status_code == 200:
+        books = response.json().get('items', [])
+        if not books:
+            return []  # No books found
+        return [
+            f"- **{book['volumeInfo']['title']}** by {', '.join(book['volumeInfo'].get('authors', ['Unknown Author']))}"
+            for book in books[:5]
+        ]
+    else:
+        st.error(f"Failed to fetch books. Status code: {response.status_code}. Response: {response.text}")
+        return []
+
 # Capture user input and generate bot response
 if user_input := st.chat_input("What knowledge do you seek today?"):
-    user_input = user_input.strip()
-    st.session_state.chat_history.append(("user", user_input))
-    st.chat_message("user").markdown(user_input)
+    user_input = user_input.strip()  # Remove whitespace
+    if not user_input:
+        st.warning("Please enter a valid question.")
+    else:
+        st.session_state.chat_history.append(("user", user_input))
+        st.chat_message("user").markdown(user_input)
 
-    # Generate response using Gemini
+    # Use Gemini AI to generate a bot response
     if model:
         try:
-            bot_response = model.generate(user_input)  # Generate based on the user's input
-            bot_text = bot_response['message']  # Extract the response message from Gemini
+            # Search for books based on user input
+            books = search_books(user_input)
+            
+            if books:
+                bot_response = (
+                    "Ah, dear seeker of knowledge, here are a few titles that may pique your interest:\n" +
+                    "\n".join(books) +
+                    "\n\nChoose wisely, for every choice shapes your journey through the realms of literature..."
+                )
+            else:
+                bot_response = "Alas, it seems the tomes of knowledge are elusive today. Perhaps you might explore another tale."
+
+            st.session_state.chat_history.append(("assistant", bot_response))
+            st.chat_message("assistant").markdown(bot_response)
         except Exception as e:
             st.error(f"An error occurred while generating the response: {e}")
-            bot_text = "I'm unable to provide recommendations at this time."
-        
-        st.session_state.chat_history.append(("assistant", bot_text))
-        st.chat_message("assistant").markdown(bot_text)
+    else:
+        st.error("Please configure the Gemini API Key to generate a response.")

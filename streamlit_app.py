@@ -1,8 +1,11 @@
 import streamlit as st
 import google.generativeai as genai
 
-st.title("📚 Elysian Bookshelf - Librarian Chatbot")
-st.subheader("What literary wisdom do you seek today?")
+
+st.title("🌿 Whisperer of Knowledge")
+st.markdown("<h3 style='color: forestgreen; font-size: 16px;'>Welcome to the Elysian Bookshelf</h3>", unsafe_allow_html=True)
+st.markdown("") 
+st.subheader("What captivating tales of wisdom shall we uncover today?")
 
 # Capture Gemini API Key
 gemini_api_key = "AIzaSyBIcWZ1OAORd7quMfSEw8f875X-SJmamBQ"

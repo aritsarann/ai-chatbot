@@ -30,11 +30,11 @@ for role, message in st.session_state.chat_history:
 
 # Function to search for books with better error handling
 def search_books(query):
-    url = f"https://www.googleapis.com/books/v1/volumes?q={query}"
+    api_key = "YOUR_GOOGLE_API_KEY"  # Replace with your actual API key
+    url = f"https://www.googleapis.com/books/v1/volumes?q={query}&key={api_key}"
     response = requests.get(url)
     
     if response.status_code == 200:
-        st.write(response.json())  # Debugging line to inspect the response
         books = response.json().get('items', [])
         
         if not books:
@@ -47,6 +47,7 @@ def search_books(query):
     else:
         st.error("Failed to fetch books. Please try again later.")
         return []
+
 
 # Capture user input and generate bot response
 if user_input := st.chat_input("What knowledge do you seek today?"):
